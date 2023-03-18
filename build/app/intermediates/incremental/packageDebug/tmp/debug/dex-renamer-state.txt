@@ -1,0 +1,4 @@
+#Sat Mar 18 16:23:08 IST 2023
+base.0=/home/asus/AndroidStudioProjects/btp_app/build/app/intermediates/dex/debug/mergeDexDebug/classes.dex
+renamed.0=classes.dex
+path.0=classes.dex
