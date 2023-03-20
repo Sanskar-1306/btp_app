@@ -15,4 +15,3 @@ class SubstationModel{
     SubstationModel(this.id,this.name,this.lt,this.trList,this.rmu,this.location);
   }
 
-}
