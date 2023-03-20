@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 Future<List<cableModel>> getCableData() async
 {
+  print("getting cables");
     http.Response response = await http.get(Uri.parse('$baseUrl/cables'));
     if (response.statusCode==200)
       {
@@ -43,6 +44,23 @@ void createCable(cableModel cable) async
 catch(e){
   print(e);
 }
+}
+
+void updateCable(cableModel cable)async{
+  print("creating cable");
+  var body = cable.toJson();
+  print(jsonEncode(body));
+
+  try{
+    http.Response response = await http.patch(Uri.parse('$baseUrl/cables/cable/${cable.id}/'),body:
+    jsonEncode(body),headers: {'Content-Type':'application/json'});
+    print(response.body);
+  }
+
+  catch(e){
+    print(e);
+  }
+
 }
 
 void getSubstationData() async

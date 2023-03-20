@@ -6,6 +6,7 @@ import 'package:btp_app/Substation.dart';
 import 'package:btp_app/Utilities/api_calls.dart';
 import 'package:btp_app/Utilities/icon_from_image.dart';
 import 'package:btp_app/coordinates.dart';
+import 'package:btp_app/widgets/cable_form.dart';
 import 'package:custom_info_window/custom_info_window.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -62,24 +63,20 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final Completer<GoogleMapController> _controller =
-  Completer<GoogleMapController>();
-  final CustomInfoWindowController _customInfoWindowController = CustomInfoWindowController();
+  GoogleMapController? controller;
+  final CustomInfoWindowController _customInfoWindowMarkerController = CustomInfoWindowController();
+  final CustomInfoWindowController _customInfoWindowLineController = CustomInfoWindowController();
   final List<Marker> _markers = <Marker>[];
   final Map<PolylineId,Polyline> _polylines = <PolylineId,Polyline>{};
+  LatLng currentClickedLocation = LatLng(0, 0);
   bool isPolyLineContinue = false;
   PolylineId currentPolylineId = PolylineId("id");
-
+  cableModel currentCable = cableModel("id", "name", 0, [],"start" , "end", "${DateTime.now()}", 2023);
+  List<cableModel> cables = [];
 
   static const CameraPosition _kBhawan = CameraPosition(
       bearing: 192.8334901395799,
       target: LatLng(29.869858078101394, 77.89556176735142),
-      zoom: 15.151926040649414);
-
-  static const CameraPosition _kDept = CameraPosition(
-      bearing: 192.8334901395799,
-      target: LatLng(29.863895988693088, 77.89736900562289),
-      tilt: 59.440717697143555,
       zoom: 15.151926040649414);
 
   Future<Position> getCurrentLocation () async
@@ -117,27 +114,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
     return Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
   }
-  // void loadMarkers()
-  // {
-  //   _markers.add(Marker(markerId: MarkerId("marker1"),
-  //   position: LatLng(29.869858078101394, 77.89556176735142),
-  //   draggable: true));
-  //
-  //   _markers.add(Marker(markerId: MarkerId("marker2"),
-  //         position: LatLng(_kDept.target.latitude, _kDept.target.longitude),
-  //         draggable: true),
-  //     );
-  //
-  //   _polylines.add(Polyline(polylineId: PolylineId("line1"),
-  //   points: [LatLng(_kBhawan.target.latitude, _kBhawan.target.longitude),
-  //     LatLng(_kDept.target.latitude, _kDept.target.longitude)],
-  //     color: Color(0xff00008B)
-  //   ));
-  // }
-void animateToCurrent(Position currentLocation)async
+
+void animateToCurrent(LatLng currentLocation)async
 {
-  final GoogleMapController controller = await _controller.future;
-  controller.animateCamera(CameraUpdate.newCameraPosition(CameraPosition(target: LatLng(currentLocation.latitude,
+
+  controller!.animateCamera(CameraUpdate.newCameraPosition(CameraPosition(target: LatLng(currentLocation.latitude,
       currentLocation.longitude),zoom: 20)));
 }
   void _addPoleMarker() async {
@@ -150,10 +131,10 @@ void animateToCurrent(Position currentLocation)async
           draggable: true,
         icon: BitmapDescriptor.fromBytes(customIcon),
         onTap: (){
-        _customInfoWindowController.addInfoWindow!(Column(
+        _customInfoWindowMarkerController.addInfoWindow!(Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             SubstationWidget(),
-
           ],
         ),LatLng(currentLocation.latitude, currentLocation.longitude));
         // showModalBottomSheet(context: context, builder: (context){
@@ -163,7 +144,7 @@ void animateToCurrent(Position currentLocation)async
         }
       ));
     });
-    animateToCurrent(currentLocation);
+    animateToCurrent(LatLng(currentLocation.latitude,currentLocation.longitude));
 
   }
 
@@ -174,18 +155,12 @@ void animateToCurrent(Position currentLocation)async
      {
 
        currentPolylineId = PolylineId("id: ${currentLocation.latitude} "+"${currentLocation.longitude}");
-       PolylineId localPolyline = PolylineId("id: ${currentLocation.latitude} "+"${currentLocation.longitude}");
        print(currentPolylineId.value);
        _polylines[currentPolylineId]= (Polyline(polylineId: currentPolylineId,
          consumeTapEvents: true,
          width: 3,
          color: Colors.red,
          points: [],
-         onTap: (){
-         print("Local"+ "$localPolyline");
-         print("current"+ "$currentPolylineId");
-         handlePolylineClick(localPolyline);
-         }
        ));
        isPolyLineContinue = true;
 
@@ -195,50 +170,67 @@ void animateToCurrent(Position currentLocation)async
    _polylines.remove(polyline);
    polyline.points.add(LatLng(currentLocation.latitude,
        currentLocation.longitude));
+   currentCable.points = polyline.points.map((e) => locationPoint(e.latitude, e.longitude)).toList();
    setState(() {
      _polylines[currentPolylineId] = polyline;
      print(_polylines[currentPolylineId]!.points);
    });
-   animateToCurrent(currentLocation);
+   animateToCurrent(LatLng(currentLocation.latitude,currentLocation.longitude));
+
 
  }
-void _addPolyLine() async{
+void _addPolyLine(PolylineId id,cableModel cable) async{
+    print("adding new polyline: ${id.value}");
  setState(() {
+
+   _polylines[id] = new Polyline(polylineId: id,consumeTapEvents: true,
+       width: 3,
+       color: Colors.red,
+       points: cable.points.map((e) => LatLng(e.latitutde, e.longitude)).toList(),
+       onTap: (){
+         handlePolylineClick(id,cable);
+       });
    print("polyline created");
    isPolyLineContinue = false;
     for (Polyline p in _polylines.values)
       {
         print(p.polylineId.value);
       }
-
  });
-
 }
 
-void handlePolylineClick(PolylineId polylineId)
+void handlePolylineClick(PolylineId polylineId,cableModel cable)async
 {
   Polyline newPolyLine = _polylines[polylineId]!.copyWith(colorParam: Colors.blue);
   setState(() {
     _polylines[polylineId]= newPolyLine;
   });
-  _customInfoWindowController.addInfoWindow!(
-      Container(
-        color: Colors.white,
-        child: Center(child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Text("${polylineId.value}"),
-        )),
-      ),LatLng(newPolyLine.points[0].latitude,newPolyLine.points[0].longitude )
+
+  _customInfoWindowLineController.addInfoWindow!(
+      CableForm(cable),LatLng(_polylines[polylineId]!.points[0].latitude, _polylines[polylineId]!.points[0].longitude)
   );
+  print("animating");
+  animateToCurrent(LatLng(_polylines[polylineId]!.points[0].latitude, _polylines[polylineId]!.points[0].longitude));
 }
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-   // getCableData();
+    getCableData().then((cableList) {
+      setState(() {
+        cables = cableList;
+        cables.forEach((cable) {_addPolyLine(PolylineId(cable.id), cable);});
+      });
+
+    });
+   cables.forEach((element) {
+     _addPolyLine(PolylineId(element.id), element);
+
+   });
     //getSubstationData();
-    createCable(cableModel("id", "harhschutiya", 69, [locationPoint(0, 0),locationPoint(1, 1)], "Pitampura", "Spa", "1-1-2024", 2001));
+    //createCable(cableModel("id", "harhschutiya", 69, [locationPoint(0, 0),locationPoint(1, 1)], "Pitampura", "Spa", "1-1-2024", 2001));
+    cableModel cable = cableModel("id", "sample", 0, [],"" , "", "", 2023);
     PolylineId newPolylineId = PolylineId("id1");
     _polylines [newPolylineId] =(Polyline(polylineId: newPolylineId,
     consumeTapEvents: true,
@@ -248,7 +240,7 @@ void handlePolylineClick(PolylineId polylineId)
       LatLng(29.863895988693088, 77.89736900562289),],
       onTap: (){
           print("clicked on line");
-          handlePolylineClick(newPolylineId);
+          handlePolylineClick(newPolylineId,cable);
 
       },
 
@@ -261,6 +253,7 @@ void handlePolylineClick(PolylineId polylineId)
   Widget build(BuildContext context) {
     return Scaffold(
       body: Column(
+
         children: [
           Expanded(
             child: Stack(
@@ -271,20 +264,32 @@ void handlePolylineClick(PolylineId polylineId)
                   myLocationEnabled: true,
                   myLocationButtonEnabled: true,
                   onTap: (position) {
-                    _customInfoWindowController.hideInfoWindow!();
+                    print("clicked position");
+                    currentClickedLocation = position;
+                    _customInfoWindowMarkerController.hideInfoWindow!();
+                    _customInfoWindowLineController.hideInfoWindow!();
                   },
                   onCameraMove: (position) {
-                    _customInfoWindowController.onCameraMove!();
+                    _customInfoWindowMarkerController.onCameraMove!();
+                    _customInfoWindowLineController.onCameraMove!();
                   },
-                  onMapCreated: (GoogleMapController controller) async {
-                    _customInfoWindowController.googleMapController = controller;
+                  onMapCreated: (GoogleMapController cont) async {
+                   controller = cont;
+                    _customInfoWindowMarkerController.googleMapController = controller;
+                    _customInfoWindowLineController.googleMapController = controller;
                   },
                   markers: Set<Marker>.of(_markers),
                   polylines: Set<Polyline>.of(_polylines.values),
                 ),
                 CustomInfoWindow(
-                  controller: _customInfoWindowController,
-                  height: 300,
+                  controller: _customInfoWindowLineController,
+                  height: 400,
+                  width: 320,
+                  offset: 50,
+                ),
+                CustomInfoWindow(
+                  controller: _customInfoWindowMarkerController,
+                  height: 250,
                   width: 320,
                   offset: 50,
                 ),
@@ -310,7 +315,8 @@ void handlePolylineClick(PolylineId polylineId)
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: (isPolyLineContinue)?FilledButton(onPressed: (){
-                  _addPolyLine();
+                  _addPolyLine(currentPolylineId,currentCable);
+                   createCable(currentCable);
                 }, child: Text("Create")):null,
               ),
             ],
@@ -323,8 +329,4 @@ void handlePolylineClick(PolylineId polylineId)
     );
   }
 
-  Future<void> _goToTheBhawan() async {
-    final GoogleMapController controller = await _controller.future;
-    controller.animateCamera(CameraUpdate.newCameraPosition(_kBhawan));
-  }
 }

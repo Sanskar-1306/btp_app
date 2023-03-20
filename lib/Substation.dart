@@ -1,5 +1,11 @@
+import 'package:btp_app/Models/LTModel.dart';
+import 'package:btp_app/Models/RMUModel.dart';
+import 'package:btp_app/Models/TransformerModel.dart';
 import 'package:btp_app/Utilities/icon_from_image.dart';
+import 'package:btp_app/widgets/LTpanel_form.dart';
 import 'package:btp_app/widgets/image_gesture.dart';
+import 'package:btp_app/widgets/rmu_form.dart';
+import 'package:btp_app/widgets/transformer_form.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
@@ -25,7 +31,7 @@ class _SubstationWidgetState extends State<SubstationWidget> {
 
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Center(child: ImageGesture('assets/images/RMU.png',20,'RMU Information')),
+            Center(child: ImageGesture('assets/images/RMU.png',20,'RMU Information',RMUForm(RMUModel(0, 0)))),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -40,21 +46,28 @@ class _SubstationWidgetState extends State<SubstationWidget> {
                        scrollDirection: Axis.horizontal,
                         itemCount: transformers.length,
                         itemBuilder: (context,i){
-                      return ImageGesture('assets/images/transformer.png',10,'T1 Information');
+                      return ImageGesture('assets/images/transformer.png',10,'T1 Information',TransformerForm(transformerModel("", "", 0, 0, "2023", 0, 0, 2021, "substation 1")));
                     }),
                   ),
                 ),
-                IconButton(onPressed: (){
+                GestureDetector(onTap: (){
                   setState(() {
                     transformers.add(1);
                     print(transformers.length);
                   });
-                }, icon: Icon(Icons.plus_one))
+                }, child: Container(
+                    decoration: BoxDecoration(
+                        color: Colors.black,
+                        shape: BoxShape.circle),
+                    child: Padding(
+                      padding: const EdgeInsets.all(2.0),
+                      child: Icon(Icons.add,color: Colors.white,),
+                    )))
               ],
 
             ),
 
-      ImageGesture('assets/images/LT_Panel.png',70,'LT Panel Information')
+      ImageGesture('assets/images/LT_Panel.png',70,'LT Panel Information',LTPanelForm(LTModel(0, 0, 0, 0)))
           ],
       ),
         )

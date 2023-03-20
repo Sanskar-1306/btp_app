@@ -1,19 +1,22 @@
+import 'package:btp_app/Models/TransformerModel.dart';
+import 'package:btp_app/widgets/transformer_form.dart';
 import 'package:flutter/material.dart';
 
 class ImageGesture extends StatelessWidget {
  String asset;
  double height;
  String id;
-   ImageGesture(this.asset,this.height,this.id);
+ var formWidget;
+
+   ImageGesture(this.asset,this.height,this.id,this.formWidget);
 
 @override
 Widget build(BuildContext context) {
   return GestureDetector(
     onTap: (){
       showModalBottomSheet(context: context, builder: (context){
-        return Container(child: Center(
-          child: Text(this.id),
-        ),);
+        return formWidget;
+        //TransformerForm(transformerModel("id", "name", 100, 20, "1 jan 2024", 100, 20, 2022, "subs"));
       });
     },
     child: Padding(

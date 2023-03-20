@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 class cableModel{
   String id ="";
   String name ="";
-  int rating=0;
+  double rating=0;
   List<locationPoint> points=[];
   String startingLocation = "";
   String endingLocation = "";
@@ -14,7 +14,7 @@ class cableModel{
     List<locationPoint> listPoints =   new List<locationPoint>.from(json['point_locations'].map((p)=>locationPoint.fromJson(p)).toList());
     return cableModel(json['_id'],
         json['name'],
-        json['rating'],
+        json['rating'].toDouble(),
         listPoints,
         json['starting_location'],
         json['ending_location'],
@@ -36,8 +36,8 @@ class cableModel{
 
 }
 class locationPoint{
-  int latitutde=0;
-  int longitude=0;
+  double latitutde=0;
+  double longitude=0;
   locationPoint(this.latitutde,this.longitude);
 
   factory locationPoint.fromJson(List<dynamic> json)
