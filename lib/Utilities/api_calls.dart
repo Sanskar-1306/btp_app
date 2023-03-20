@@ -26,3 +26,32 @@ Future<List<cableModel>> getCableData() async
     throw Exception("failed to load cables");
 
 }
+
+void createCable(cableModel cable) async
+{
+  print("creating cable");
+  var body = cable.toJson();
+  print(jsonEncode(body));
+
+  try{
+  http.Response response = await http.post(Uri.parse('$baseUrl/cables/createcable'),body:
+  jsonEncode(body),headers: {'Content-Type':'application/json'}
+  );
+  print(response.body);
+}
+
+catch(e){
+  print(e);
+}
+}
+
+void getSubstationData() async
+{
+  http.Response response = await http.get(Uri.parse('$baseUrl/substations'));
+  if (response.statusCode==200)
+    {
+      var data = jsonDecode(response.body);
+      print(data);
+    }
+
+}

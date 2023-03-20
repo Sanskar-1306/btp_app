@@ -11,6 +11,7 @@ class SubstationWidget extends StatefulWidget {
 }
 
 class _SubstationWidgetState extends State<SubstationWidget> {
+  List<int> transformers = [0,1];
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -28,17 +29,31 @@ class _SubstationWidgetState extends State<SubstationWidget> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                  child: ImageGesture('assets/images/transformer.png',120,'T1 Information'),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: ImageGesture('assets/images/transformer.png',120,'T2 Information'),
-                ),
 
+                Container(
+                  height: 120,
+                  width: MediaQuery.of(context).size.width*0.7,
+                  child: Center(
+                    child: ListView.builder(
+                      shrinkWrap: true,
+
+                       scrollDirection: Axis.horizontal,
+                        itemCount: transformers.length,
+                        itemBuilder: (context,i){
+                      return ImageGesture('assets/images/transformer.png',10,'T1 Information');
+                    }),
+                  ),
+                ),
+                IconButton(onPressed: (){
+                  setState(() {
+                    transformers.add(1);
+                    print(transformers.length);
+                  });
+                }, icon: Icon(Icons.plus_one))
               ],
+
             ),
+
       ImageGesture('assets/images/LT_Panel.png',70,'LT Panel Information')
           ],
       ),

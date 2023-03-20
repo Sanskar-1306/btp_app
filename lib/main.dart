@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:btp_app/Models/LineModel.dart';
 import 'package:btp_app/Substation.dart';
 import 'package:btp_app/Utilities/api_calls.dart';
 import 'package:btp_app/Utilities/icon_from_image.dart';
@@ -209,6 +210,7 @@ void _addPolyLine() async{
       {
         print(p.polylineId.value);
       }
+
  });
 
 }
@@ -234,7 +236,9 @@ void handlePolylineClick(PolylineId polylineId)
   void initState() {
     // TODO: implement initState
     super.initState();
-    getCableData();
+   // getCableData();
+    //getSubstationData();
+    createCable(cableModel("id", "harhschutiya", 69, [locationPoint(0, 0),locationPoint(1, 1)], "Pitampura", "Spa", "1-1-2024", 2001));
     PolylineId newPolylineId = PolylineId("id1");
     _polylines [newPolylineId] =(Polyline(polylineId: newPolylineId,
     consumeTapEvents: true,
@@ -281,7 +285,7 @@ void handlePolylineClick(PolylineId polylineId)
                 CustomInfoWindow(
                   controller: _customInfoWindowController,
                   height: 300,
-                  width: 300,
+                  width: 320,
                   offset: 50,
                 ),
               ],
