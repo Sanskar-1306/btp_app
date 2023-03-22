@@ -7,10 +7,17 @@ class LTModel{
   LTModel(this.incomers,this.outgoing,this.current_in,this.current_out);
   factory LTModel.fromJson(Map<String,dynamic>json){
     return LTModel(json['incomers'],
-      json['outgoing'],
-      json['incoming_current'],
-      json['outgoing_current']
+      json['outgoers'],
+      json['incomer_rated_current'].toDouble(),
+      json['outgoer_rated_current'].toDouble()
     );
   }
+
+  Map toJson()=> {
+    "incomers" : incomers,
+    "outgoers": outgoing,
+    "incomer_rated_current": current_in,
+    "outgoer_rated_current": current_out
+  };
 
 }

@@ -67,7 +67,7 @@ class _SubstationWidgetState extends State<SubstationWidget> {
 
             ),
 
-      ImageGesture('assets/images/LT_Panel.png',70,'LT Panel Information',LTPanelForm(LTModel(0, 0, 0, 0)))
+      ImageGesture('assets/images/LT_Panel.png',70,'LT Panel Information',LTPanelForm(LTModel(0, 0, 0, 0))),
           ],
       ),
         )

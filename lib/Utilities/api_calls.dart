@@ -1,6 +1,9 @@
 import 'dart:convert';
 
+import 'package:btp_app/Models/LTModel.dart';
 import 'package:btp_app/Models/LineModel.dart';
+import 'package:btp_app/Models/SubstationModel.dart';
+import 'package:btp_app/Models/TransformerModel.dart';
 import 'package:btp_app/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -63,13 +66,62 @@ void updateCable(cableModel cable)async{
 
 }
 
-void getSubstationData() async
+Future<List<SubstationModel>> getSubstationData() async
 {
   http.Response response = await http.get(Uri.parse('$baseUrl/substations'));
   if (response.statusCode==200)
     {
       var data = jsonDecode(response.body);
-      print(data);
+      List<SubstationModel> substations=[];
+      for (var d in data['data'])
+      {
+        print("d= $d");
+        SubstationModel newSubstation = SubstationModel.fromJson(d);
+        substations.add(newSubstation);
+        print(newSubstation.name);
+      }
+      return substations;
     }
 
+  throw Exception("failed to load substation");
+
+}
+
+Future<SubstationModel> createSubstation(SubstationModel substation) async
+{
+  print("creating substation");
+  var body = substation.toJson();
+  print(jsonEncode(body));
+
+
+    http.Response response = await http.post(Uri.parse('$baseUrl/substations/createsubstation'),body:
+    jsonEncode(body),headers: {'Content-Type':'application/json'}
+    );
+    print(response.body);
+    var data = jsonDecode(response.body)['data'];
+    SubstationModel substationModel = SubstationModel.fromJson(data);
+    return substationModel;
+
+
+  //catch(e){
+    //throw Exception(e);
+//  }
+}
+
+void createTransformer(transformerModel transformer) async
+{
+  print("creating transformer");
+  var body = transformer.toJson();
+  print(jsonEncode(body));
+
+  try{
+    http.Response response = await http.post(Uri.parse('$baseUrl/transformers/createtransformer'),body:
+    jsonEncode(body),headers: {'Content-Type':'application/json'}
+    );
+    print(response.body);
+  }
+
+  catch(e){
+    print(e);
+  }
 }

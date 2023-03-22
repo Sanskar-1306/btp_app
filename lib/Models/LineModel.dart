@@ -42,7 +42,7 @@ class locationPoint{
 
   factory locationPoint.fromJson(List<dynamic> json)
   {
-    return locationPoint(json[0], json[1]);
+    return locationPoint(json[0].toDouble(), json[1].toDouble());
   }
 
   List<dynamic> toJson()

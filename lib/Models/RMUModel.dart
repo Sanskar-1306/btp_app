@@ -4,9 +4,14 @@ class RMUModel{
 
   RMUModel(this.cktBkrRating,this.way);
   factory RMUModel.fromJson(Map<String,dynamic>json){
-    return RMUModel(json['circuit_breaker_rating'],
+    return RMUModel(json['circuit_breaker_rating'].toDouble(),
       json['way']
     );
   }
+
+  Map toJson()=> {
+    "circuit_breaker_rating" : cktBkrRating,
+    "way": way
+  };
 
 }

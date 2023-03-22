@@ -13,14 +13,24 @@ class transformerModel{
   factory transformerModel.fromJson(Map<String,dynamic>json){
     return transformerModel(json['_id'],
         json['name'],
-        json['rated_power'],
-        json['impedance'],
+        json['rated_power'].toDouble(),
+        json['impedance'].toDouble(),
         json['next_maintenance'],
-        json['rated_primary_voltage'],
-        json['rated_secondary_voltage'],
-        json['year_of_manuacture'],
+        json['rated_primary_voltage'].toDouble(),
+        json['rated_secondary_voltage'].toDouble(),
+        json['year_of_manufacture'],
         json['substation']
        );
   }
+
+  Map toJson()=> {
+    "name":name,
+    "rated_power":ratedPower,
+    "impedance":impedance,
+    "next_maintenance":nextMant,
+    "rated_primary_voltage":primaryVolt,
+    "rated_secondary_voltage":secondaryVolt,
+    "year_of_manufacture":manYear
+  };
 
 }

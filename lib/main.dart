@@ -1,7 +1,10 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:btp_app/Models/LTModel.dart';
 import 'package:btp_app/Models/LineModel.dart';
+import 'package:btp_app/Models/RMUModel.dart';
+import 'package:btp_app/Models/SubstationModel.dart';
 import 'package:btp_app/Substation.dart';
 import 'package:btp_app/Utilities/api_calls.dart';
 import 'package:btp_app/Utilities/icon_from_image.dart';
@@ -66,18 +69,21 @@ class _MyHomePageState extends State<MyHomePage> {
   GoogleMapController? controller;
   final CustomInfoWindowController _customInfoWindowMarkerController = CustomInfoWindowController();
   final CustomInfoWindowController _customInfoWindowLineController = CustomInfoWindowController();
-  final List<Marker> _markers = <Marker>[];
+  final Map<MarkerId,Marker> _markers = <MarkerId,Marker>{};
   final Map<PolylineId,Polyline> _polylines = <PolylineId,Polyline>{};
   LatLng currentClickedLocation = LatLng(0, 0);
   bool isPolyLineContinue = false;
   PolylineId currentPolylineId = PolylineId("id");
   cableModel currentCable = cableModel("id", "name", 0, [],"start" , "end", "${DateTime.now()}", 2023);
   List<cableModel> cables = [];
+  List<SubstationModel> substations =[];
+  SubstationModel substation=SubstationModel("id", "name", LTModel(2, 8, 40, 20), [], RMUModel(200,4), locationPoint(0.0, 0.0));
 
   static const CameraPosition _kBhawan = CameraPosition(
       bearing: 192.8334901395799,
       target: LatLng(29.869858078101394, 77.89556176735142),
       zoom: 15.151926040649414);
+
 
   Future<Position> getCurrentLocation () async
   {
@@ -121,30 +127,74 @@ void animateToCurrent(LatLng currentLocation)async
   controller!.animateCamera(CameraUpdate.newCameraPosition(CameraPosition(target: LatLng(currentLocation.latitude,
       currentLocation.longitude),zoom: 20)));
 }
-  void _addPoleMarker() async {
 
-    Position currentLocation = await getCurrentLocation();
-    final Uint8List customIcon =  await getBytesFromAsset(path: 'assets/images/substation.png', width: 120);
-    setState(() {
-      _markers.add(Marker(markerId: MarkerId("${currentLocation.latitude} "+"${currentLocation.longitude}"),
-          position: LatLng(currentLocation.latitude, currentLocation.longitude),
-          draggable: true,
-        icon: BitmapDescriptor.fromBytes(customIcon),
-        onTap: (){
+
+Future<Marker> markerProperties(LatLng currentLocation,String id)async{
+  final Uint8List customIcon =  await getBytesFromAsset(path: 'assets/images/substation.png', width: 120);
+ return Marker(markerId: MarkerId(id),
+      position: LatLng(currentLocation.latitude, currentLocation.longitude),
+      draggable: true,
+      icon: BitmapDescriptor.fromBytes(customIcon),
+     onDragStart: (coordinates){
+   print("Drag start");
+   showDialog(context: context, builder: (context){
+     return AlertDialog(title: Text("Do you want to remove this substation?"),
+       actions: [
+         TextButton(onPressed: (){
+           Navigator.pop(context);
+           setState(() {
+             print(_markers[MarkerId(id)]);
+             _markers.remove(MarkerId(id));
+             print(_markers[MarkerId(id)]);
+             print(_markers.values.length);
+           });
+         }, child: Text("Delete",style: TextStyle(color: Colors.red),)),
+         TextButton(onPressed: (){}, child: Text("Cancel")),
+       ],
+     );
+   });
+
+      },
+      onTap: (){
+
         _customInfoWindowMarkerController.addInfoWindow!(Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             SubstationWidget(),
           ],
         ),LatLng(currentLocation.latitude, currentLocation.longitude));
-        // showModalBottomSheet(context: context, builder: (context){
-        //   return SubstationWidget();
-        //
-        // });
-        }
-      ));
+      }
+  );
+}
+  void _addPoleMarker() async {
+
+    Position currentLocation = await getCurrentLocation();
+    substation.location = locationPoint(currentLocation.latitude, currentLocation.longitude);
+
+    Marker marker = await markerProperties(LatLng(currentLocation.latitude,
+        currentLocation.longitude),"${currentLocation.latitude} "+"${currentLocation.longitude}");
+    setState(() {
+
+      _markers[MarkerId("${currentLocation.latitude} "+"${currentLocation.longitude}")]= marker;
+
+    createSubstation(substation).then((substation) async{
+      substations.add(substation);
+      _markers.remove(marker);
+      Marker marker2 = await markerProperties(LatLng(currentLocation.latitude, currentLocation.longitude), substation.id);
+     _markers[MarkerId(substation.id)]=marker2;
     });
+    } );
     animateToCurrent(LatLng(currentLocation.latitude,currentLocation.longitude));
+
+  }
+
+  void _addApiMarkers(SubstationModel substation) async{
+    //final Uint8List customIcon =  await getBytesFromAsset(path: 'assets/images/substation.png', width: 120);
+    Marker marker = await markerProperties(LatLng(substation.location.latitutde, substation.location.longitude), substation.id);
+    setState(() {
+      _markers[MarkerId(substation.id)]=marker;
+    });
+    animateToCurrent(LatLng(substation.location.latitutde, substation.location.longitude));
 
   }
 
@@ -224,11 +274,19 @@ void handlePolylineClick(PolylineId polylineId,cableModel cable)async
       });
 
     });
-   cables.forEach((element) {
-     _addPolyLine(PolylineId(element.id), element);
+   //cables.forEach((element) {
+     //_addPolyLine(PolylineId(element.id), element);
+   //});
+    getSubstationData().then((substationList) {
+      setState(() {
+      substations = substationList;
+      substations.forEach((substation) {
+        _addApiMarkers(substation);
+      });
+      });
+    }
 
-   });
-    //getSubstationData();
+    );
     //createCable(cableModel("id", "harhschutiya", 69, [locationPoint(0, 0),locationPoint(1, 1)], "Pitampura", "Spa", "1-1-2024", 2001));
     cableModel cable = cableModel("id", "sample", 0, [],"" , "", "", 2023);
     PolylineId newPolylineId = PolylineId("id1");
@@ -278,18 +336,19 @@ void handlePolylineClick(PolylineId polylineId,cableModel cable)async
                     _customInfoWindowMarkerController.googleMapController = controller;
                     _customInfoWindowLineController.googleMapController = controller;
                   },
-                  markers: Set<Marker>.of(_markers),
+                  markers: Set<Marker>.of(_markers.values),
                   polylines: Set<Polyline>.of(_polylines.values),
                 ),
                 CustomInfoWindow(
                   controller: _customInfoWindowLineController,
                   height: 400,
                   width: 320,
+
                   offset: 50,
                 ),
                 CustomInfoWindow(
                   controller: _customInfoWindowMarkerController,
-                  height: 250,
+                  height: 290,
                   width: 320,
                   offset: 50,
                 ),
@@ -309,8 +368,9 @@ void handlePolylineClick(PolylineId polylineId,cableModel cable)async
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: FilledButton(onPressed: (){
+                 // createSubstation(substation);
                   _addPoleMarker();
-                }, child: Text("Add a pole")),
+                }, child: Text("Add substation")),
               ),
               Padding(
                 padding: const EdgeInsets.all(8.0),
